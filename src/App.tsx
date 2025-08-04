@@ -17,7 +17,7 @@ const malla: Materia[] = [
   { codigo: "CBC-SEMIO", nombre: "Semiología", correlativas: [], ciclo: "CBC" },
   { codigo: "CBC-MAT", nombre: "Matemática", correlativas: [], ciclo: "CBC" },
 
-  // CFG obligatorias
+  // CFG Obligatorias
   { codigo: "CFG-PPB", nombre: "Procesos Psicológicos Básicos", correlativas: ["CBC-PSI"], ciclo: "CFG" },
   { codigo: "CFG-ESTA", nombre: "Estadística", correlativas: ["CBC-MAT"], ciclo: "CFG" },
   { codigo: "CFG-PSOC", nombre: "Psicología Social", correlativas: [], ciclo: "CFG" },
@@ -39,7 +39,7 @@ const malla: Materia[] = [
   { codigo: "CFG-EL2", nombre: "Electiva 2", correlativas: [], ciclo: "CFG", esElectiva: true },
   { codigo: "CFG-IDIOMA", nombre: "Requisito Idioma", correlativas: ["CFG-PPB"], ciclo: "CFG", esElectiva: true },
 
-  // CFP obligatorias
+  // CFP Obligatorias
   { codigo: "CFP-PSDH", nombre: "Psicología, Ética y Derechos Humanos", correlativas: ["CFG-PPB"], ciclo: "CFP" },
   { codigo: "CFP-PSIN", nombre: "Psicología Institucional", correlativas: ["CFG-PPB"], ciclo: "CFP" },
   { codigo: "CFP-PSEDU", nombre: "Psicología Educacional", correlativas: ["CFG-PPB"], ciclo: "CFP" },
@@ -55,33 +55,32 @@ const malla: Materia[] = [
   { codigo: "CFP-EL3", nombre: "Electiva 3", correlativas: [], ciclo: "CFP", esElectiva: true },
 ];
 
-export default function App() {
+export default function MallaInteractiva() {
   const [aprobadas, setAprobadas] = useState<string[]>([]);
 
-  // Cargar aprobadas guardadas
   useEffect(() => {
     const guardadas = localStorage.getItem("materiasAprobadas");
     if (guardadas) setAprobadas(JSON.parse(guardadas));
   }, []);
 
-  // Guardar aprobadas al cambiar
   useEffect(() => {
     localStorage.setItem("materiasAprobadas", JSON.stringify(aprobadas));
   }, [aprobadas]);
 
-  // Alternar materia aprobada o no
   const toggleMateria = (codigo: string) => {
     setAprobadas((prev) =>
       prev.includes(codigo) ? prev.filter((c) => c !== codigo) : [...prev, codigo]
     );
   };
 
-  // Ver si puede cursarse (correlativas aprobadas)
   const puedeCursarse = (materia: Materia) =>
-    materia.correlativas.every((c) => aprobadas.includes(c));
+    materia.correlativas.every((cod) => aprobadas.includes(cod));
 
-  // Ciclos para orden
   const ciclos: ("CBC" | "CFG" | "CFP")[] = ["CBC", "CFG", "CFP"];
+
+  const totalMaterias = malla.length;
+  const aprobadasCount = aprobadas.length;
+  const porcentajeGlobal = Math.round((aprobadasCount / totalMaterias) * 100);
 
   return (
     <div
@@ -104,12 +103,31 @@ export default function App() {
         Malla de Psicología UBA - Plan 2025
       </h1>
 
+      <div
+        style={{
+          maxWidth: 600,
+          margin: "0 auto 2rem",
+          backgroundColor: "#e7d5e9",
+          padding: "1rem 1.5rem",
+          borderRadius: 12,
+          boxShadow: "0 0 8px rgba(150, 53, 100, 0.3)",
+          fontWeight: "600",
+          fontSize: "1.1rem",
+          textAlign: "center",
+          color: "#5b2e54",
+          width: "90%",          // para que sea responsivo en móvil
+          wordWrap: "break-word" // que el texto no se corte fuera de pantalla
+        }}
+      >
+        Progreso global: {porcentajeGlobal}% ({aprobadasCount} de {totalMaterias} materias)
+      </div>
+
       {ciclos.map((ciclo) => {
-        const obligatorias = malla.filter((m) => m.ciclo === ciclo && !m.esElectiva);
-        const electivas = malla.filter((m) => m.ciclo === ciclo && m.esElectiva);
+        const materiasCiclo = malla.filter((m) => m.ciclo === ciclo && !m.esElectiva);
+        const electivasCiclo = malla.filter((m) => m.ciclo === ciclo && m.esElectiva);
 
         return (
-          <section key={ciclo} style={{ marginBottom: "2rem" }}>
+          <div key={ciclo} style={{ marginBottom: "2rem" }}>
             <h2
               style={{
                 backgroundColor:
@@ -134,23 +152,17 @@ export default function App() {
                 marginTop: 8,
               }}
             >
-              {/* Obligatorias */}
               <div style={{ flex: 1, minWidth: 260 }}>
                 <h3 style={{ color: "#444", marginBottom: 8 }}>Obligatorias</h3>
-                {obligatorias.length === 0 && <p>No hay materias obligatorias.</p>}
-                {obligatorias.map((m) => {
+                {materiasCiclo.length === 0 && <p>No hay materias obligatorias.</p>}
+                {materiasCiclo.map((m) => {
                   const aprobada = aprobadas.includes(m.codigo);
                   const habilitada = puedeCursarse(m);
-
                   return (
                     <div
                       key={m.codigo}
                       onClick={() => habilitada && toggleMateria(m.codigo)}
-                      title={
-                        habilitada
-                          ? "Click para marcar/aprobar"
-                          : "Correlativas no aprobadas"
-                      }
+                      title={habilitada ? "Click para marcar/aprobar" : "Correlativas no aprobadas"}
                       style={{
                         userSelect: "none",
                         padding: "0.6rem 1rem",
@@ -161,7 +173,7 @@ export default function App() {
                         backgroundColor: aprobada
                           ? "#7D2C58"
                           : habilitada
-                          ? "#D8BFD8"
+                          ? "#B080B0" // más oscuro para las habilitadas
                           : "#E5D7E8",
                         color: aprobada ? "#f3e9f1" : "#5b2e54",
                         boxShadow: aprobada ? "0 0 8px #582240" : "none",
@@ -176,11 +188,10 @@ export default function App() {
                 })}
               </div>
 
-              {/* Electivas */}
               <div style={{ flex: 1, minWidth: 140 }}>
                 <h3 style={{ color: "#444", marginBottom: 8 }}>Electivas</h3>
-                {electivas.length === 0 && <p>No hay electivas.</p>}
-                {electivas.map((e) => {
+                {electivasCiclo.length === 0 && <p>No hay electivas.</p>}
+                {electivasCiclo.map((e) => {
                   const aprobada = aprobadas.includes(e.codigo);
                   return (
                     <div
@@ -208,7 +219,7 @@ export default function App() {
                 })}
               </div>
             </div>
-          </section>
+          </div>
         );
       })}
     </div>
